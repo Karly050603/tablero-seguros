@@ -1,0 +1,5 @@
+cartera.db
+_pycache__/
+*.pyc
+.venv/
+.streamlit/secrets.toml
