@@ -29,6 +29,7 @@ BANDINGS = {"edad_conductor":      [17, 30, 35, 45, 50, 55, 60, 95],
 @st.cache_data
 def cargar_datos():
     candidatos = [
+    os.path.join(os.path.dirname(__file__), "datos", "datos.parquet"),
     os.path.join(os.path.dirname(__file__), "datos", "datos.pkl")
 ]
     ruta = next((r for r in candidatos if os.path.exists(r)), None)
