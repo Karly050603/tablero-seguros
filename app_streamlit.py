@@ -104,23 +104,32 @@ NOMBRE = {"edad_conductor_cat":"edad", "nivel_bonus_cat":"nivel de bonus", "pote
           "combustible":"combustible", "uso":"uso"}
 
 def cotizar_empirico(d, p):
-    seg = d[(d["edad_cat"].astype(str) == banda("edad_conductor", p["edad_conductor"])) &
-            (d["cobertura"] == p["cobertura"]) & (d["sexo"] == p["sexo"]) &
-            (d["uso"] == p["uso"]) & (d["combustible"] == p["combustible"]) &
-            (d["antiguedad_vehiculo_cat"] == banda("antiguedad_vehiculo", p["antiguedad"])) &
-            (d["potencia_cat"] == banda("potencia", p["potencia"])) &
-            (d["nivel_bonus_cat"] == banda("nivel_bonus", p["bonus"]))]
-
-    n = len(seg)
+    base = d[d["cobertura"] == p["cobertura"]].copy()
+    if base.empty:
+        st.warning("No hay pólizas para esta cobertura.")
+        return np.nan, 0
+    base["distancia"] = (
+        (base["edad_conductor"] - p["edad_conductor"]).abs() / 10 +
+        (base["antiguedad_vehiculo"] - p["antiguedad"]).abs() / 5 +
+        (base["potencia"] - p["potencia"]).abs() / 20 +
+        (base["nivel_bonus"] - p["bonus"]).abs() / 3 +
+        2 * (base["sexo"] != p["sexo"]).astype(int) +
+        2 * (base["uso"] != p["uso"]).astype(int) +
+        2 * (base["combustible"] != p["combustible"]).astype(int)
+    )
+    base = base.sort_values("distancia")
+    n = min(100, len(base))
+    seg = base.iloc[:n]
+    while seg["monto_total"].sum() <= 0 and n < len(base):
+        n = min(n * 2, len(base))
+        seg = base.iloc[:n]
     exposicion = seg["exposicion"].sum()
+    monto = seg["monto_total"].sum()
+    pp = monto / exposicion if exposicion > 0 and monto > 0 else np.nan
 
-    if exposicion == 0:
-        st.warning("No hay pólizas para esta combinación. No es posible calcular la prima empírica.")
-        return 0.0, n
 
-    pp = seg["monto_total"].sum() / exposicion
-    return pp, n
-       
+    return pp, len(seg)
+
 
 def cotizar_glm(p, m_freq, m_sev, m_agg):
     row = pd.DataFrame([{"edad_conductor_cat": banda("edad_conductor", p["edad_conductor"]),
