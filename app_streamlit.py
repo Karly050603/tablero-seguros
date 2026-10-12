@@ -127,6 +127,9 @@ def cotizar_empirico(d, p):
     monto = seg["monto_total"].sum()
     pp = monto / exposicion if exposicion > 0 and monto > 0 else np.nan
 
+    # Mensaje temporal para verificar que se ejecuta esta versión
+    st.caption(f"FUNCIÓN ACTUALIZADA | Pólizas disponibles: {len(base):,} | Utilizadas: {len(seg):,}")
+
     return pp, len(seg)
 
 
